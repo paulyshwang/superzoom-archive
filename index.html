@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paul's superzoom archive</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+
+      /* ─────────────────────────────────────────
+         BACKGROUND IMAGE
+         Replace the URL below with your own path,
+         e.g. background-image: url('assets/bg.png');
+      ───────────────────────────────────────── */
+      background-color: #d8e8c8;
+      background-image: url('');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    /* ── Header ── */
+    #header {
+      position: fixed;
+      top: 0; left: 0; right: 190px;
+      z-index: 200;
+      padding: 16px 24px 12px;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    #header h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: -0.01em;
+    }
+    #header p {
+      font-size: 11px;
+      color: #888;
+      margin-top: 3px;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      width: 190px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-left: 1px solid rgba(0,0,0,0.08);
+      z-index: 200;
+      overflow-y: auto;
+      padding: 16px 14px 20px;
+    }
+
+    .tag-group { margin-bottom: 18px; }
+    .tag-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #aaa;
+      margin-bottom: 7px;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1.5px solid #ddd;
+      font-size: 11px;
+      color: #555;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      user-select: none;
+      background: rgba(255,255,255,0.5);
+    }
+    .tag:hover { border-color: #aaa; color: #222; }
+    .tag.active { background: #222; border-color: #222; color: #fff; }
+
+    /* Month sub-tags are slightly smaller */
+    .tag.month { font-size: 10px; padding: 2px 7px; }
+
+    .year-block { margin-bottom: 10px; }
+    .tag.year-tag { font-weight: 700; margin-bottom: 6px; display: inline-block; }
+    .month-block { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 8px; border-left: 2px solid #e8e8e8; margin-top: 5px; }
+
+    .clear-btn {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #aaa;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .clear-btn:hover { color: #555; }
+
+    /* ── Canvas ── */
+    #canvas {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 190px; 
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    /* ── Shared video ── */
+    #sharedVideo {
+      position: fixed;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      object-fit: cover;
+    }
+    #sharedVideo.visible { opacity: 1; pointer-events: auto; }
+
+    /* ── Icons ── */
+    .icon-item {
+      position: absolute;
+      width: 80px; height: 80px;  /* default / medium */
+      cursor: grab;
+      user-select: none;
+      z-index: 50;
+    }
+    .icon-item.large  { width: 160px; height: 160px; }
+    .icon-item.medium { width: 110px;  height: 110px;  }
+    .icon-item.small  { width: 60px;  height: 60px;  }
+    .icon-item:active { cursor: grabbing; }
+    .icon-item img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      transition: opacity 0.2s ease;
+    }
+    .icon-item.playing img { opacity: 0; }
+    .icon-item.hidden-tag { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <h1>paul's superzoom archive <span style="font-weight:400;color:#888;">(jan 2020 – apr 2021)</span></h1>
+    <p>click an icon to play &nbsp;·&nbsp; drag to rearrange</p>
+  </div>
+
+  <div id="sidebar">
+
+    <div class="tag-group">
+      <div class="tag-group-label">Style</div>
+      <div class="tags">
+        <span class="tag" data-group="style" data-tag="hearts">hearts</span>
+        <span class="tag" data-group="style" data-tag="tvshow">tvshow</span>
+        <span class="tag" data-group="style" data-tag="sad">sad</span>
+        <span class="tag" data-group="style" data-tag="angry">angry</span>
+        <span class="tag" data-group="style" data-tag="surprise">surprise</span>
+        <span class="tag" data-group="style" data-tag="dramatic">dramatic</span>
+      </div>
+    </div>
+
+    <div class="tag-group">
+      <div class="tag-group-label">Who</div>
+      <div class="tags">
+        <span class="tag" data-group="who" data-tag="paul">@paushwa</span>
+      </div>
+    </div>
+
+    <div class="tag-group">
+      <div class="tag-group-label">What</div>
+      <div class="tags">
+        <span class="tag" data-group="what" data-tag="food">food</span>
+        <span class="tag" data-group="what" data-tag="animal">animal</span>
+        <span class="tag" data-group="what" data-tag="object">object</span>
+        <span class="tag" data-group="what" data-tag="unknown">what even is this?</span>
+        <!-- <span class="tag" data-group="what" data-tag="vessel">Vessel</span> -->
+        <!-- <span class="tag" data-group="what" data-tag="plant">Plant</span>
+        <span class="tag" data-group="what" data-tag="person">Person</span> -->
+      </div>
+    </div>
+
+    <div class="tag-group">
+      <div class="tag-group-label">When</div>
+
+      <div class="year-block">
+        <span class="tag year-tag" data-group="year" data-tag="2020">2020</span>
+        <div class="month-block">
+          <span class="tag month" data-group="month" data-tag="2020-01">jan</span>
+          <span class="tag month" data-group="month" data-tag="2020-02">feb</span>
+          <span class="tag month" data-group="month" data-tag="2020-03">mar</span>
+          <span class="tag month" data-group="month" data-tag="2020-04">apr</span>
+          <span class="tag month" data-group="month" data-tag="2020-05">may</span>
+          <span class="tag month" data-group="month" data-tag="2020-06">jun</span>
+          <span class="tag month" data-group="month" data-tag="2020-07">jul</span>
+          <span class="tag month" data-group="month" data-tag="2020-08">aug</span>
+          <span class="tag month" data-group="month" data-tag="2020-09">sep</span>
+          <span class="tag month" data-group="month" data-tag="2020-10">oct</span>
+          <span class="tag month" data-group="month" data-tag="2020-11">nov</span>
+          <span class="tag month" data-group="month" data-tag="2020-12">dec</span>
+        </div>
+      </div>
+
+      <div class="year-block">
+        <span class="tag year-tag" data-group="year" data-tag="2021">2021</span>
+        <div class="month-block">
+          <span class="tag month" data-group="month" data-tag="2021-01">jan</span>
+          <span class="tag month" data-group="month" data-tag="2021-02">feb</span>
+          <span class="tag month" data-group="month" data-tag="2021-03">mar</span>
+          <span class="tag month" data-group="month" data-tag="2021-04">apr</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tag-group">
+      <div class="tag-group-label">Where</div>
+      <div class="tags">
+        <!-- <span class="tag" data-group="where" data-tag="indoors">Indoors</span>
+        <span class="tag" data-group="where" data-tag="outdoors">Outdoors</span> -->
+        <span class="tag" data-group="where" data-tag="la">los angeles</span>
+        <span class="tag" data-group="where" data-tag="nj">new jersey</span>
+      </div>
+    </div>
+
+    <div class="tag-group">
+      <div class="tag-group-label">Why</div>
+      <div class="tags">
+        <span class="tag" data-group="why" data-tag="???">???</span>
+      </div>
+    </div>
+
+    <button class="clear-btn" id="clearBtn">clear all filters</button>
+  </div>
+
+  <video id="sharedVideo" preload="auto" playsinline></video>
+  <div id="canvas"></div>
+
+  <script>
+  // =====================================================================
+  // ICON DATA — fill in each entry:
+  //   image    : e.g. "assets/images/01.png"
+  //   video    : e.g. "assets/videos/01.mov"
+  //   effect   : hearts | tvshow | sad | angry | surprise | dramatic
+  //   category : food | animal | object | vessel | plant | person
+  //   where    : indoors | outdoors | nj | la
+  //   why      : ??? (only option for now)
+  //   year     : 2020 | 2021
+  //   month    : YYYY-MM  e.g. "2020-03"
+  // =====================================================================
+  const ICON_DATA = [
+    { image:'assets/images/Howlin.png', video:'assets/videos/Howlin.mov', size:'large', style:'hearts', who:'paul', what:'food', year:'2020', month:'2020-01', where:'la', why:'???' },
+    { image:'assets/images/Quality_Equipment.png', video:'assets/videos/Quality_Equipment.mov', size: 'large', style:'sad', who:'paul', what:'object', year:'2020', month:'2020-02', where:'la', why:'???' },
+    { image:'assets/images/Bread.png', video:'assets/videos/Bread.mov', size: 'large', style:'sad', who:'paul', what:'food', year:'2020', month:'2020-03', where:'la', why:'???' },
+    { image:'assets/images/Ball/Ball_2.png', video:'assets/videos/Ball.mov', size:'small', style:'sad', who:'paul', what:'object', year:'2020', month:'2020-03', where:'la', why:'???' },
+    { image:'assets/images/Shakshuka.png', video:'assets/videos/Shakshuka.mov', size: 'large', style:'hearts', who:'paul', what:'food', year:'2020', month:'2020-03', where:'la', why:'???' },
+    { image:'assets/images/Snail.png', video:'assets/videos/Snail.mov', size: 'small', style:'angry', who:'paul', what:'animal', year:'2020', month:'2020-04', where:'la', why:'???' },
+    { image:'assets/images/Donut.png', video:'assets/videos/Donut.mov', style:'sad', who:'paul', what:'food', year:'2020', month:'2020-05', where:'la', why:'???' },
+    { image:'assets/images/Fries.png', video:'assets/videos/Fries.mov', size: 'large', style:'sad', who:'paul', what:'food', year:'2020', month:'2020-05', where:'la', why:'???' },
+    { image:'assets/images/Soda_Parking/Soda_Parking_2.png', video:'assets/videos/Soda_Parking.mov', size:'small', style:'sad', who:'paul', what:'object', year:'2020', month:'2020-05', where:'la', why:'???' },
+    { image:'assets/images/Fire_Extinguisher.png', video:'assets/videos/Fire_Extinguisher.mov', style:'dramatic', who:'paul', what:'object', year:'2020', month:'2020-05', where:'la',  why:'???' },
+    { image:'assets/images/Socks.png', video:'assets/videos/Socks.mov', style:'sad', who:'paul', what:'object', year:'2020', month:'2020-05', where:'la', why:'???' },
+    { image:'assets/images/Chair.png', video:'assets/videos/Chair.mov', style:'surprise', who:'paul', what:'object', year:'2020', month:'2020-05', where:'la', why:'???' },
+    { image:'assets/images/Smiley.png', video:'assets/videos/Smiley.mov', size:'small', style:'tvshow', who:'paul', what:'object', year:'2021', month:'2020-06', where:'la', why:'???' },
+    { image:'assets/images/Bottle.png', video:'assets/videos/Bottle.mov', size: 'large', style:'sad', who:'paul', what:'object', year:'2021', month:'2020-06', where:'la', why:'???' },
+    { image:'assets/images/Apartment.png', video:'assets/videos/Apartment.mov', size: 'small', style:'tvshow', who:'paul', what:'object', year:'2021', month:'2020-06', where:'la', why:'???' },
+    { image:'assets/images/Boba/Boba_2.png', video:'assets/videos/Boba.mov', style:'surprise', who:'paul', what:'food', year:'2021', month:'2020-06', where:'la', why:'???' },
+    { image:'assets/images/Soda_Grass/Soda_Grass.png', video:'assets/videos/Soda_Grass.mov', size:'small', style:'sad', who:'paul', what:'object', year:'2021', month:'2020-06', where:'la', why:'???' },
+    { image:'assets/images/Headphones.png', video:'assets/videos/Headphones.mov', size:'small', style:'sad', who:'paul', what:'object', year:'2021', month:'2020-07', where:'la', why:'???' },
+    { image:'assets/images/Grapes.png', video:'assets/videos/Grapes.mov', size: 'large', style:'sad', who:'paul', what:'food', year:'2021', month:'2020-07', where:'la', why:'???' },
+    { image:'assets/images/Weird_Fruit.png', video:'assets/videos/Weird_Fruit.mov', size:'large', style:'sad', who:'paul', what:'unknown', year:'2021', month:'2020-11', where:'nj', why:'???' },
+    { image:'assets/images/BMO.png', video:'assets/videos/BMO.mov', style:'tvshow', who:'paul', what:'object', year:'2021', month:'2020-12', where:'nj', why:'???' },
+    { image:'assets/images/Chick-fil-A/Chick-fil-A_2.png', video:'assets/videos/Chick-fil-A.mov', size:'small', style:'sad', who:'paul', what:'object', year:'2021', month:'2020-12', where:'nj',       why:'???' },
+    { image:'assets/images/Snowman.png', video:'assets/videos/Snowman.mov', size: 'large', style:'tvshow', who:'paul', what:'object', year:'2021', month:'2020-12', where:'nj', why:'???' },
+    { image:'assets/images/Cat.png', video:'assets/videos/Cat.mov', style:'tvshow', who:'paul', what:'animal', year:'2021', month:'2021-04', where:'nj', why:'???' },
+  ];
+  // =====================================================================
+
+  // ── Place icons once on load (no reset on resize) ──
+  const canvas    = document.getElementById('canvas');
+  const COLS      = 6;
+  const ROWS      = 4;
+  const JITTER    = 5;
+
+  // Icon size classes and their pixel sizes
+  const SIZE_CLASSES = { large: 160, medium: 110, small: 60 };
+
+  // ─────────────────────────────────────────────────────
+  // ICON SIZE — set each icon's size class here:
+  // options: 'large' (110px), 'medium' (80px), 'small' (52px)
+  // You can also set a default below and override per-icon
+  // in ICON_DATA by adding a `size` property.
+  // ─────────────────────────────────────────────────────
+  const DEFAULT_SIZE = 'medium';
+
+  // Gap between icons scales with viewport:
+  // COL_GAP = 6% of canvas width, ROW_GAP = 6% of canvas height
+  // Clamped at 8px so it never gets too tight.
+  function getGaps() {
+    const colGap = Math.max(canvas.offsetWidth  * 0.06, 8);
+    const rowGap = Math.max(canvas.offsetHeight * 0.06, 8);
+    return { colGap, rowGap };
+  }
+
+  (function placeIcons() {
+    const { colGap, rowGap } = getGaps();
+
+    // Cluster size uses the default icon size for grid math;
+    // mixed sizes will overlap slightly but that's intentional/natural.
+    const baseSize = SIZE_CLASSES[DEFAULT_SIZE];
+    const clusterW = COLS * baseSize + (COLS - 1) * colGap;
+    const clusterH = ROWS * baseSize + (ROWS - 1) * rowGap;
+    const startX   = (canvas.offsetWidth  - clusterW) / 2;
+    const startY   = (canvas.offsetHeight - clusterH) / 2;
+
+    ICON_DATA.forEach((data, i) => {
+      const col      = i % COLS;
+      const row      = Math.floor(i / COLS);
+      const jx       = (Math.random() - 0.5) * JITTER;
+      const jy       = (Math.random() - 0.5) * JITTER;
+      const sizeClass = data.size || DEFAULT_SIZE;
+      const iconSize  = SIZE_CLASSES[sizeClass];
+
+      const el = document.createElement('div');
+      el.className = 'icon-item ' + sizeClass;
+      Object.assign(el.dataset, {
+        style:   data.style,
+        who:      data.who,
+        what:     data.what,
+        year:     data.year,
+        month:    data.month,
+        where:    data.where,
+        why:      data.why,
+        video:    data.video,
+      });
+      // Center icon on its grid cell (accounts for varying sizes)
+      const cellW = baseSize + colGap;
+      const cellH = baseSize + rowGap;
+      el.style.left = (startX + col * cellW + (baseSize - iconSize) / 2 + jx) + 'px';
+      el.style.top  = (startY + row * cellH + (baseSize - iconSize) / 2 + jy) + 'px';
+
+      const img = document.createElement('img');
+      img.src = data.image;
+      img.alt = data.style;
+      el.appendChild(img);
+
+      canvas.appendChild(el);
+      makeDraggable(el);
+    });
+  })();
+
+  // ── Tag filtering ──
+  // Groups and their corresponding dataset key
+  const GROUP_KEY = {
+    style:    'style',
+    who:      'who',
+    what:     'what',
+    year:     'year',
+    month:    'month',
+    where:    'where',
+    why:      'why',
+  };
+
+  const activeTags = {};
+
+  document.querySelectorAll('.tag').forEach(tagEl => {
+    tagEl.addEventListener('click', () => {
+      const group = tagEl.dataset.group;
+      const tag   = tagEl.dataset.tag;
+
+      // "???" tag does nothing
+      // if (tag === '???') return;
+
+      if (!activeTags[group]) activeTags[group] = new Set();
+      if (activeTags[group].has(tag)) {
+        activeTags[group].delete(tag);
+        tagEl.classList.remove('active');
+      } else {
+        activeTags[group].add(tag);
+        tagEl.classList.add('active');
+      }
+
+      // If a year is toggled, also activate/deactivate its months
+      if (group === 'year') {
+        const active = activeTags['year'].has(tag);
+        document.querySelectorAll(`.tag[data-group="month"]`).forEach(m => {
+          if (m.dataset.tag.startsWith(tag)) {
+            if (active) {
+              if (!activeTags['month']) activeTags['month'] = new Set();
+              activeTags['month'].add(m.dataset.tag);
+              m.classList.add('active');
+            } else {
+              if (activeTags['month']) activeTags['month'].delete(m.dataset.tag);
+              m.classList.remove('active');
+            }
+          }
+        });
+      }
+
+      applyFilters();
+    });
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    Object.keys(activeTags).forEach(g => activeTags[g].clear());
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    applyFilters();
+  });
+
+  function applyFilters() {
+    const activeGroups = Object.entries(activeTags).filter(([, s]) => s.size > 0);
+
+    // If both year and month are active, month takes precedence (more specific)
+    const groups = activeGroups.filter(([g]) => {
+      if (g === 'year' && activeTags['month'] && activeTags['month'].size > 0) return false;
+      return true;
+    });
+
+    document.querySelectorAll('.icon-item').forEach(el => {
+      if (groups.length === 0) { el.classList.remove('hidden-tag'); return; }
+      const visible = groups.every(([group, tagSet]) => {
+        return tagSet.has(el.dataset[GROUP_KEY[group]]);
+      });
+      el.classList.toggle('hidden-tag', !visible);
+    });
+  }
+
+  // ── Video playback ──
+  const video    = document.getElementById('sharedVideo');
+  const VIDEO_W  = 360;
+  const VIDEO_H  = 640;
+  let activeIcon = null;
+  let playing    = false;
+
+  function playVideo(iconEl) {
+    if (playing) return;
+    playing = true; activeIcon = iconEl;
+    const rect = iconEl.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    video.style.width  = VIDEO_W + 'px';
+    video.style.height = VIDEO_H + 'px';
+    video.style.left   = (cx - VIDEO_W / 2) + 'px';
+    video.style.top    = (cy - VIDEO_H / 2) + 'px';
+
+    const src = iconEl.dataset.video;
+    if (video.dataset.loaded !== src) {
+      video.src = src;
+      video.dataset.loaded = src;
+      video.load();
+    }
+
+    iconEl.classList.add('playing');
+    setTimeout(() => {
+      video.classList.add('visible');
+      video.currentTime = 0;
+      video.play().catch(() => { video.muted = true; video.play(); });
+    }, 300);
+  }
+
+  video.addEventListener('ended', () => {
+    video.classList.remove('visible');
+    setTimeout(() => {
+      if (activeIcon) activeIcon.classList.remove('playing');
+      activeIcon = null; playing = false;
+    }, 400);
+  });
+
+  // ── Drag + click ──
+  const DRAG_THRESHOLD = 5;
+  let zCounter = 51;
+  function bringToFront(el) { el.style.zIndex = ++zCounter; }
+
+  function makeDraggable(el) {
+    let startX, startY, origLeft, origTop, dragging;
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      bringToFront(el);
+      startX = e.clientX; startY = e.clientY;
+      origLeft = parseInt(el.style.left) || 0;
+      origTop  = parseInt(el.style.top)  || 0;
+      dragging = false;
+      function onMove(e) {
+        const dx = e.clientX - startX, dy = e.clientY - startY;
+        if (!dragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) dragging = true;
+        if (dragging) { el.style.left=(origLeft+dx)+'px'; el.style.top=(origTop+dy)+'px'; }
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        if (!dragging && !playing) playVideo(el);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    el.addEventListener('touchstart', e => {
+      bringToFront(el);
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      origLeft = parseInt(el.style.left)||0; origTop = parseInt(el.style.top)||0;
+      dragging = false;
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      const t = e.touches[0];
+      const dx = t.clientX-startX, dy = t.clientY-startY;
+      if (!dragging && (Math.abs(dx)>DRAG_THRESHOLD||Math.abs(dy)>DRAG_THRESHOLD)) dragging=true;
+      if (dragging) { e.preventDefault(); el.style.left=(origLeft+dx)+'px'; el.style.top=(origTop+dy)+'px'; }
+    }, { passive: false });
+    el.addEventListener('touchend', () => { if (!dragging && !playing) playVideo(el); });
+  }
+  </script>
+</body>
+</html>
